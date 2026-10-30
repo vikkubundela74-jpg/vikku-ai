@@ -1,63 +1,156 @@
-<!DOCTYPE html><html lang="hi">
+<!DOCTYPE html>
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vikku AI</title>
+
 <style>
 body {
+  margin: 0;
   background: #050510;
   color: white;
   font-family: Arial, sans-serif;
-  text-align: center;
-  padding: 20px;
 }
-h1 { color: #00ffc3; }
-.box {
-  max-width: 450px;
+.app {
+  max-width: 480px;
   margin: auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #080820;
+}
+header {
   padding: 20px;
-  background: #11112a;
-  border-radius: 15px;
+  text-align: center;
+  font-size: 25px;
+  font-weight: bold;
+  color: #7dffcf;
+  border-bottom: 1px solid #252545;
+}
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+}
+.msg {
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.user {
+  background: #174b47;
+  margin-left: 35px;
+}
+.bot {
+  background: #20203c;
+  margin-right: 25px;
+}
+.bottom {
+  display: flex;
+  padding: 12px;
+  gap: 8px;
+  background: #050510;
 }
 input {
-  width: 90%;
+  flex: 1;
   padding: 13px;
   border-radius: 10px;
-  border: none;
-  margin: 10px 0;
+  border: 1px solid #555;
+  background: #15152b;
+  color: white;
+  font-size: 16px;
 }
 button {
-  padding: 12px 25px;
-  background: #00ffc3;
+  padding: 12px 17px;
   border: none;
   border-radius: 10px;
+  background: #35d6a5;
+  color: black;
   font-weight: bold;
-}
-#reply {
-  margin-top: 20px;
-  color: #00ffc3;
 }
 </style>
 </head>
-<body>
-<div class="box">
-<h1>VIKKU AI</h1>
-<p>Your Personal AI Assistant</p>
-<input id="question" placeholder="कुछ भी पूछो...">
-<br>
-<button onclick="askAI()">Send</button>
-<div id="reply">Welcome to Vikku AI!</div>
-</div><script>
-function askAI() {
-  let q = document.getElementById("question").value.trim();
-  let reply = document.getElementById("reply");
 
-  if (q === "") {
-    reply.innerText = "पहले कुछ लिखो!";
-  } else {
-    reply.innerText = "तुमने पूछा: " + q +
-      "\nनमस्ते! मैं Vikku AI हूँ। अभी मेरा AI इंटरनेट से कनेक्ट नहीं है।";
-  }
+<body>
+<div class="app">
+
+<header>🤖 Vikku AI</header>
+
+<div id="chat">
+  <div class="msg bot">
+    नमस्ते! मैं Vikku AI हूँ। मुझसे कुछ भी पूछो।
+  </div>
+</div>
+
+<div class="bottom">
+  <input id="message" placeholder="यहाँ अपना सवाल लिखें...">
+  <button id="send">Send</button>
+</div>
+
+</div>
+
+<script>
+const API_URL = "https://vikku-ai-backend.bundeladipesh194.workers.dev/";
+
+const chat = document.getElementById("chat");
+const input = document.getElementById("message");
+const send = document.getElementById("send");
+
+function addMessage(text, type) {
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
 }
-</script></body>
+
+async function sendMessage() {
+  const message = input.value.trim();
+
+  if (!message) return;
+
+  addMessage(message, "user");
+  input.value = "";
+  send.disabled = true;
+  send.textContent = "...";
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "जवाब नहीं मिला।");
+    }
+
+    addMessage(data.reply || "जवाब नहीं मिला।", "bot");
+
+  } catch (error) {
+    addMessage("माफ़ करना, कनेक्शन में समस्या है। " + error.message, "bot");
+  }
+
+  send.disabled = false;
+  send.textContent = "Send";
+  input.focus();
+}
+
+send.addEventListener("click", sendMessage);
+
+input.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    sendMessage();
+  }
+});
+</script>
+
+</body>
 </html>
